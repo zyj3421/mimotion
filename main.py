@@ -34,6 +34,25 @@ def get_min_max_by_time(hour=None, minute=None):
     max_step = get_int_value_default(config, 'MAX_STEP', 25000)
     return min_step, max_step
 
+
+# 检查今天是否已经执行过（依据 cron_change_time 中的北京时间日期）
+def already_ran_today():
+    if not os.path.exists('cron_change_time'):
+        return False
+    today = time_bj.strftime('%y-%m-%d')
+    try:
+        with open('cron_change_time', 'r', encoding='utf-8') as f:
+            for line in f:
+                if '北京时间:' in line:
+                    # 格式：北京时间: 26-10-13 19:06:39
+                    date_part = line.split('北京时间:')[1].strip().split(' ')[0]
+                    print(f"上次运行日期：{date_part}，今天：{today}")
+                    return date_part == today
+    except Exception as e:
+        print(f"读取 cron_change_time 失败：{e}，默认继续执行")
+    return False
+
+
 # 虚拟ip地址
 def fake_ip():
     # 随便找的国内IP段：223.64.0.0 - 223.117.255.255
@@ -349,4 +368,10 @@ if __name__ == "__main__":
         print(f"多账号执行间隔：{sleep_seconds}")
         use_concurrent = False
     # endregion
+    
+    # 手动触发时可通过 FORCE_RUN=true 绕过今日检查，方便调试
+    force_run = os.environ.get('FORCE_RUN', '').lower() == 'true'
+    if not force_run and already_ran_today():
+        print(f"今天（{time_bj.strftime('%Y-%m-%d')}）已经执行过，跳过本次运行")
+        exit(0)
     execute()
