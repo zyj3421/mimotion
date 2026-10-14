@@ -28,6 +28,8 @@ jobs:
         env:
             CONFIG: ${{ secrets.CONFIG }}
             AES_KEY: ${{ secrets.AES_KEY }}
+            # 手动触发时绕过"今天是否已跑"的检查，定时触发时生效
+            FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
         run: |
           pip3 install -r requirements.txt
           python3 main.py
