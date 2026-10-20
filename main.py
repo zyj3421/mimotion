@@ -369,9 +369,18 @@ if __name__ == "__main__":
         use_concurrent = False
     # endregion
     
-    # 手动触发时可通过 FORCE_RUN=true 绕过今日检查，方便调试
+    # 手动触发时可通过 FORCE_RUN=true 绕过今日检查和时间限制，方便调试
     force_run = os.environ.get('FORCE_RUN', '').lower() == 'true'
-    if not force_run and already_ran_today():
-        print(f"今天（{time_bj.strftime('%Y-%m-%d')}）已经执行过，跳过本次运行")
-        exit(0)
+    
+    if not force_run:
+        # 新增：0-8点之间不执行（防止跨天延迟执行）
+        if time_bj.hour < 8:
+            print(f"当前北京时间 {time_bj.strftime('%H:%M')}，处于 0-8 点限制时段，跳过本次运行")
+            exit(0)
+
+        # 原有逻辑：今天已执行过则跳过
+        if already_ran_today():
+            print(f"今天（{time_bj.strftime('%Y-%m-%d')}）已经执行过，跳过本次运行")
+            exit(0)
+
     execute()
